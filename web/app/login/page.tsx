@@ -20,7 +20,7 @@ export default function LoginPage() {
     try {
       const response = await loginUser({ email, password });
       localStorage.setItem("token", response.accessToken);
-      router.push("/");
+      router.push("/landing");
     } catch (err: any) {
       setError(err.message || "Failed to login. Please check your credentials.");
     } finally {

@@ -28,7 +28,7 @@ export default function RegisterPage() {
     try {
       const response = await registerUser({ username, email, password });
       localStorage.setItem("token", response.accessToken);
-      router.push("/");
+      router.push("/landing");
     } catch (err: any) {
       setError(err.message || "Failed to register. Please try again.");
     } finally {
