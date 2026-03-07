@@ -1,6 +1,41 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { registerUser } from "@/lib/api/auth";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await registerUser({ username, email, password });
+      localStorage.setItem("token", response.accessToken);
+      router.push("/");
+    } catch (err: any) {
+      setError(err.message || "Failed to register. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
       <div className="flex flex-col justify-center px-8 py-12 md:w-1/2 md:px-16 lg:px-32">
@@ -18,13 +53,16 @@ export default function RegisterPage() {
             Join Us!
           </h2>
           
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
             <div>
               <label className="sr-only">Username</label>
               <input 
                 type="text" 
                 placeholder="Username" 
                 required 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="input-field" 
               />
             </div>
@@ -34,6 +72,8 @@ export default function RegisterPage() {
                 type="email" 
                 placeholder="Email" 
                 required 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input-field" 
               />
             </div>
@@ -43,6 +83,8 @@ export default function RegisterPage() {
                 type="password" 
                 placeholder="Password" 
                 required 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="input-field" 
               />
             </div>
@@ -52,14 +94,16 @@ export default function RegisterPage() {
                 type="password" 
                 placeholder="Confirm Password" 
                 required 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="input-field" 
               />
             </div>
             
             <hr className="my-8 border-border" />
             
-            <button type="submit" className="btn-primary w-full uppercase">
-              Sign Up
+            <button type="submit" disabled={isLoading} className="btn-primary w-full uppercase disabled:opacity-50">
+              {isLoading ? "Signing Up..." : "Sign Up"}
             </button>
           </form>
           
