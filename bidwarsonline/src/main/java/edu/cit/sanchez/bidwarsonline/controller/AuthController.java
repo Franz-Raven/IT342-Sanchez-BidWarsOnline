@@ -1,7 +1,13 @@
-package edu.cit.sanchez.bidwarsonline;
+package edu.cit.sanchez.bidwarsonline.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import edu.cit.sanchez.bidwarsonline.dto.AuthResponse;
+import edu.cit.sanchez.bidwarsonline.dto.LoginRequest;
+import edu.cit.sanchez.bidwarsonline.dto.RegisterRequest;
+import edu.cit.sanchez.bidwarsonline.service.AuthService;
+
 
 @RestController
 @RequestMapping("/api/auth")
