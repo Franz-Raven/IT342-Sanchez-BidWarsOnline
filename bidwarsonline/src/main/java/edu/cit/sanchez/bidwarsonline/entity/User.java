@@ -1,4 +1,4 @@
-package edu.cit.sanchez.bidwarsonline;
+package edu.cit.sanchez.bidwarsonline.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

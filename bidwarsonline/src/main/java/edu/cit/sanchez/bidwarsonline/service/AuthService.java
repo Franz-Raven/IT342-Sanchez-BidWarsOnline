@@ -1,10 +1,18 @@
-package edu.cit.sanchez.bidwarsonline;
+package edu.cit.sanchez.bidwarsonline.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+
+import edu.cit.sanchez.bidwarsonline.entity.User;
+import edu.cit.sanchez.bidwarsonline.entity.Wallet;
+import edu.cit.sanchez.bidwarsonline.repository.UserRepository;
+import edu.cit.sanchez.bidwarsonline.repository.WalletRepository;
+import edu.cit.sanchez.bidwarsonline.dto.AuthResponse;
+import edu.cit.sanchez.bidwarsonline.dto.LoginRequest;
+import edu.cit.sanchez.bidwarsonline.dto.RegisterRequest;
 
 import java.math.BigDecimal;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package edu.cit.sanchez.bidwarsonline;
+package edu.cit.sanchez.bidwarsonline.dto;
 
 public class RegisterRequest {
     private String email;
