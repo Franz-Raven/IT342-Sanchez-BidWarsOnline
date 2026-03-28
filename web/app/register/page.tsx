@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { registerUser } from "@/lib/api/auth";
+import { Toaster, toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function RegisterPage() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -28,9 +30,19 @@ export default function RegisterPage() {
     try {
       const response = await registerUser({ username, email, password });
       localStorage.setItem("token", response.accessToken);
-      router.push("/landing");
+      
+      // Success Toast
+      toast.success("Account created successfully!");
+      
+      // Delay redirect slightly so user can see the toast
+      setTimeout(() => {
+        router.push("/landing");
+      }, 1500);
+
     } catch (err: any) {
-      setError(err.message || "Failed to register. Please try again.");
+      const errorMessage = err.message || "Failed to register. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage); // Error Toast
     } finally {
       setIsLoading(false);
     }
@@ -38,6 +50,11 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
+      {/* The Toaster component renders the notifications. 
+         'position' set to bottom-center as requested.
+      */}
+      <Toaster position="bottom-center" richColors />
+
       <div className="flex flex-col justify-center px-8 py-12 md:w-1/2 md:px-16 lg:px-32">
         <h1 className="text-5xl font-extrabold tracking-tighter text-foreground sm:text-6xl uppercase">
           BID<span className="text-brand-gold">WARS</span>
