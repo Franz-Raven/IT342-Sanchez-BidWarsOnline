@@ -5,6 +5,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import edu.cit.sanchez.bidwarsonline.entity.User;
 import edu.cit.sanchez.bidwarsonline.entity.Wallet;
@@ -28,11 +29,13 @@ public class AuthService {
     private String supabaseKey;
 
     private final RestTemplate restTemplate;
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
 
-    public AuthService(RestTemplate restTemplate, UserRepository userRepository, WalletRepository walletRepository) {
+    public AuthService(RestTemplate restTemplate, PasswordEncoder passwordEncoder, UserRepository userRepository, WalletRepository walletRepository) {
         this.restTemplate = restTemplate;
+        this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
     }
@@ -54,9 +57,10 @@ public class AuthService {
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
+            String hashedPassword = passwordEncoder.encode(request.getPassword());
             User newUser = new User(
                     request.getEmail(),
-                    request.getPassword(), 
+                    hashedPassword,
                     request.getUsername(),
                     "PLAYER",
                     "ACTIVE"
@@ -70,7 +74,7 @@ public class AuthService {
             String token = responseBody != null && responseBody.containsKey("access_token") ? 
                     responseBody.get("access_token").toString() : null;
 
-            return new AuthResponse(token, request.getEmail(), "Registration successful");
+            return new AuthResponse(token, request.getEmail(), request.getUsername(), "Registration successful");
         }
 
         throw new RuntimeException("Registration failed");
@@ -89,7 +93,10 @@ public class AuthService {
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             String token = response.getBody().get("access_token").toString();
-            return new AuthResponse(token, request.getEmail(), "Login successful");
+            String username = userRepository.findByEmail(request.getEmail())
+                    .map(User::getUsername)
+                    .orElse("");
+            return new AuthResponse(token, request.getEmail(), username, "Login successful");
         }
 
         throw new RuntimeException("Login failed");

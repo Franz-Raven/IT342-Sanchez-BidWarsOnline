@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { Menu, X, Shield } from "lucide-react"
+import { useEffect, useState, useRef } from "react"
+import { Menu, X, Shield, User } from "lucide-react"
 
 const getInitialUser = () => {
   if (typeof window === "undefined") return null
@@ -26,6 +26,8 @@ export default function Navigation() {
   const router = useRouter()
   const [user, setUser] = useState<any>(getInitialUser())
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const checkAuth = () => {
@@ -55,6 +57,22 @@ export default function Navigation() {
     }
   }, [pathname])
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false)
+      }
+    }
+
+    if (profileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [profileMenuOpen])
+
   const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
@@ -73,7 +91,7 @@ export default function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-slate-700 bg-slate-900">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-[100rem] mx-auto px-6 lg:px-10">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
@@ -127,19 +145,56 @@ export default function Navigation() {
           </button>
 
           {/* User Section */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <span className="text-sm text-slate-400 truncate max-w-[150px]">
-                  {user.email}
-                </span>
-                
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-1.5 rounded-full bg-slate-700 text-white font-semibold text-sm hover:bg-slate-600 transition-colors uppercase tracking-tight"
-                >
-                  Logout
+                <div className="bg-card px-4 py-1.5 rounded-full border border-border flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                  <span className="text-yellow-400 font-medium">P 10,000,000</span>
+                </div>
+
+                <button className="bg-emerald-600 text-white font-semibold text-sm px-4 py-1.5 rounded-full hover:bg-emerald-700 transition-colors uppercase tracking-tight">
+                  + Deposit
                 </button>
+
+                {/* Profile Button */}
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                    className="w-9 h-9 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center font-bold text-slate-100 text-xs hover:bg-slate-600 transition-colors"
+                  >
+                    <User className="w-5 h-5" />
+                  </button>
+
+                  {/* Profile Popup */}
+                  {profileMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-50 overflow-hidden">
+                      <div className="p-4 border-b border-slate-700 flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center">
+                          <User className="w-6 h-6 text-slate-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">
+                            {user.username}
+                          </p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          handleLogout()
+                          setProfileMenuOpen(false)
+                        }}
+                        className="w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-slate-700 transition-colors text-left"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -155,12 +210,6 @@ export default function Navigation() {
                 >
                   Register
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-1.5 rounded-full bg-slate-700 text-white font-semibold text-sm hover:bg-slate-600 transition-colors uppercase tracking-tight"
-                >
-                  Logout
-                </button>
               </>
             )}
           </div>

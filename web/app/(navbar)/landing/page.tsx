@@ -12,36 +12,7 @@ const games = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
-      <header className="w-full flex items-center justify-between p-4 border-b border-border bg-background sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col gap-1 cursor-pointer">
-            <span className="block h-0.5 w-6 rounded-full bg-slate-300"></span>
-            <span className="block h-0.5 w-6 rounded-full bg-slate-300"></span>
-            <span className="block h-0.5 w-6 rounded-full bg-slate-300"></span>
-          </div>
-          <h1 className="text-xl font-bold font-sans tracking-tight text-white">
-            BidWars <span className="font-light text-slate-300">Online</span>
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="bg-card px-4 py-1.5 rounded-full border border-border flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-            <span className="text-yellow-400 font-medium">P 10,000,000</span>
-          </div>
-
-          <button className="bg-emerald-600 text-white font-semibold text-sm px-4 py-1.5 rounded-full hover:bg-emerald-700 transition-colors uppercase tracking-tight">
-            + Deposit
-          </button>
-
-          <div className="w-9 h-9 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center font-bold text-slate-100 text-xs">
-            AB
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 space-y-8 p-6 lg:p-10 max-w-[1500px] mx-auto w-full">
+      <main className="flex-1 space-y-8 p-6 lg:p-10 max-w-[100rem] mx-auto w-full">
         
         <div className="aspect-[3/1] rounded-3xl bg-card border border-border p-10 flex flex-col justify-end bg-no-repeat bg-cover bg-center"
              style={{ backgroundImage: `linear-gradient(180deg, rgba(30,41,59,0) 50%, rgba(30,41,59,1) 100%), url('https://images.pexels.com/photos/2100018/pexels-photo-2100018.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')` }}>
@@ -57,7 +28,7 @@ export default function LandingPage() {
 
         <div className="flex items-center justify-between gap-4">
           <h3 className="text-2xl font-bold uppercase tracking-wide font-sans text-slate-100">
-            Games & Auctions
+            Games
           </h3>
           <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-slate-400">View (6 of 12)</span>
@@ -104,7 +75,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="w-full mt-10 p-6 border-t border-border bg-[#0a1120] text-center text-xs text-slate-500">
-        BidWars Online | SIA Project Implementation | Central Visayas Institute of Technology
+        BidWars Online | Cebu Institute of Technology - University
       </footer>
     </div>
   );

@@ -30,6 +30,7 @@ export default function RegisterPage() {
     try {
       const response = await registerUser({ username, email, password });
       localStorage.setItem("token", response.accessToken);
+      localStorage.setItem("user", JSON.stringify({ email: response.userEmail, username: response.username, isAdmin: false }));
       
       // Success Toast
       toast.success("Account created successfully!");
@@ -49,13 +50,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background md:flex-row">
-      {/* The Toaster component renders the notifications. 
-         'position' set to bottom-center as requested.
-      */}
-      <Toaster position="bottom-center" richColors />
+    <div className="max-w-[100rem] mx-auto px-6 lg:px-10">
+      <div className="flex min-h-screen flex-col bg-background md:flex-row">
+        {/* The Toaster component renders the notifications. 
+           'position' set to bottom-center as requested.
+        */}
+        <Toaster position="bottom-center" richColors />
 
-      <div className="flex flex-col justify-center px-8 py-12 md:w-1/2 md:px-16 lg:px-32">
+        <div className="flex flex-col justify-center px-8 py-12 md:w-1/2 md:px-16 lg:px-32">
         <h1 className="text-5xl font-extrabold tracking-tighter text-foreground sm:text-8xl uppercase">
           BID<span className="text-brand-gold">WARS</span>
         </h1>
@@ -131,6 +133,7 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

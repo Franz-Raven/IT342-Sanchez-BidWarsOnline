@@ -26,7 +26,7 @@ public class AuthController {
             AuthResponse response = authService.registerUser(request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, e.getMessage()));
+            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, e.getMessage()));
         }
     }
 
@@ -36,7 +36,7 @@ public class AuthController {
             AuthResponse response = authService.loginUser(request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, e.getMessage()));
+            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, e.getMessage()));
         }
     }
 }

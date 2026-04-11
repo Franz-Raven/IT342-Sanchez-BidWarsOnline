@@ -18,8 +18,9 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await loginUser({ email, password });
+      const response = await loginUser({ email, password, username: "" });
       localStorage.setItem("token", response.accessToken);
+      localStorage.setItem("user", JSON.stringify({ email: response.userEmail, username: response.username, isAdmin: false }));
       router.push("/landing");
     } catch (err: any) {
       setError(err.message || "Failed to login. Please check your credentials.");
@@ -29,8 +30,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background md:flex-row">
-      <div className="flex flex-col justify-center px-8 py-12 md:w-1/2 md:px-16 lg:px-32">
+    <div className="max-w-[100rem] mx-auto px-6 lg:px-10">
+      <div className="flex min-h-screen flex-col bg-background md:flex-row">
+        <div className="flex flex-col justify-center px-8 py-12 md:w-1/2 md:px-16 lg:px-32">
         <h1 className="text-5xl font-extrabold tracking-tighter text-foreground sm:text-8xl uppercase">
           BID<span className="text-brand-gold">WARS</span>
         </h1>
@@ -84,6 +86,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+      </div>
       </div>
     </div>
   );
