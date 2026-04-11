@@ -10,6 +10,11 @@ export async function apiRequest<T>(
     ...(options.headers as Record<string, string> | undefined),
   };
 
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   if (!("Content-Type" in headers) && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
@@ -37,11 +42,13 @@ export async function apiRequest<T>(
         : undefined;
 
     const msgFromObj =
-      maybeObj && typeof maybeObj.error === "string"
-        ? maybeObj.error
-        : maybeObj && typeof maybeObj.message === "string"
-        ? maybeObj.message
-        : undefined;
+      // Check for ApiResponse error format: { error: { message: "..." } }
+      (maybeObj && typeof maybeObj.error === "object" && maybeObj.error && 
+       typeof (maybeObj.error as any).message === "string") ? (maybeObj.error as any).message :
+      // Fallback to other formats
+      (maybeObj && typeof maybeObj.error === "string") ? maybeObj.error :
+      (maybeObj && typeof maybeObj.message === "string") ? maybeObj.message :
+      undefined;
 
     const msg =
       msgFromObj ??

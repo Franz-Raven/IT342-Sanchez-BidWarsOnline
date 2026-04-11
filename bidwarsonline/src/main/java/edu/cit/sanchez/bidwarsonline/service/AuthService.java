@@ -14,6 +14,7 @@ import edu.cit.sanchez.bidwarsonline.repository.WalletRepository;
 import edu.cit.sanchez.bidwarsonline.dto.AuthResponse;
 import edu.cit.sanchez.bidwarsonline.dto.LoginRequest;
 import edu.cit.sanchez.bidwarsonline.dto.RegisterRequest;
+import edu.cit.sanchez.bidwarsonline.security.JwtService;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -32,12 +33,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
+    private final JwtService jwtService;
 
-    public AuthService(RestTemplate restTemplate, PasswordEncoder passwordEncoder, UserRepository userRepository, WalletRepository walletRepository) {
+    public AuthService(RestTemplate restTemplate,
+                       PasswordEncoder passwordEncoder,
+                       UserRepository userRepository,
+                       WalletRepository walletRepository,
+                       JwtService jwtService) {
         this.restTemplate = restTemplate;
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
+        this.jwtService = jwtService;
     }
 
     @Transactional
@@ -70,17 +77,32 @@ public class AuthService {
             Wallet newWallet = new Wallet(savedUser, BigDecimal.ZERO, "USD");
             walletRepository.save(newWallet);
 
-            Map<String, Object> responseBody = response.getBody();
-            String token = responseBody != null && responseBody.containsKey("access_token") ? 
-                    responseBody.get("access_token").toString() : null;
-
-            return new AuthResponse(token, request.getEmail(), request.getUsername(), "Registration successful");
+            String jwtToken = jwtService.generateToken(savedUser.getId(), savedUser.getEmail(), savedUser.getUsername());
+            return new AuthResponse(jwtToken, request.getEmail(), request.getUsername(), "Registration successful");
         }
 
         throw new RuntimeException("Registration failed");
     }
 
     public AuthResponse loginUser(LoginRequest request) {
+        // First try local authentication
+        try {
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("User not found locally"));
+
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new RuntimeException("Invalid password");
+            }
+
+            String jwtToken = jwtService.generateToken(user.getId(), user.getEmail(), user.getUsername());
+            return new AuthResponse(jwtToken, user.getEmail(), user.getUsername(), "Login successful");
+        } catch (RuntimeException e) {
+            // Fall back to Supabase authentication if local auth fails
+            return loginUserViaSupabase(request);
+        }
+    }
+
+    private AuthResponse loginUserViaSupabase(LoginRequest request) {
         String url = supabaseUrl + "/auth/v1/token?grant_type=password";
 
         Map<String, Object> body = new HashMap<>();
@@ -92,15 +114,35 @@ public class AuthService {
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            String token = response.getBody().get("access_token").toString();
-            String username = userRepository.findByEmail(request.getEmail())
-                    .map(User::getUsername)
-                    .orElse("");
-            return new AuthResponse(token, request.getEmail(), username, "Login successful");
+            String supabaseToken = response.getBody().get("access_token").toString();
+
+            // Check if user exists locally, create if not
+            User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+            if (user == null) {
+                // Create local user record for Supabase-authenticated user
+                String hashedPassword = passwordEncoder.encode(request.getPassword());
+                user = new User(
+                        request.getEmail(),
+                        hashedPassword,
+                        request.getUsername() != null ? request.getUsername() : "",
+                        "PLAYER",
+                        "ACTIVE"
+                );
+                user = userRepository.save(user);
+
+                // Create wallet
+                Wallet wallet = new Wallet(user, BigDecimal.ZERO, "USD");
+                walletRepository.save(wallet);
+            }
+
+            // Generate our own JWT
+            String jwtToken = jwtService.generateToken(user.getId(), user.getEmail(), user.getUsername());
+            return new AuthResponse(jwtToken, user.getEmail(), user.getUsername(), "Login successful");
         }
 
-        throw new RuntimeException("Login failed");
+        throw new RuntimeException("Invalid email or password");
     }
+
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();

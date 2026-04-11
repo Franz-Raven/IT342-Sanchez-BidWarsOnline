@@ -1,12 +1,9 @@
 import Link from "next/link";
 
 const games = [
-  { id: 1, title: "Emerald Plinko", descShort: "High Stakes", descLong: "Classic drop game with multipliers.", currentBid: 50000 },
-  { id: 2, title: "Deep Sea Mines", descShort: "Strategy", descLong: "Navigate the grid. Avoid explosions.", currentBid: 125000 },
-  { id: 3, title: "Neon Hi-Lo", descShort: "Card Duel", descLong: "Predict the next card sequence.", currentBid: 75000 },
-  { id: 4, title: "Project Alpha Bid", descShort: "Auction", descLong: "Compete for exclusive digital assets.", currentBid: 210000 },
-  { id: 5, title: "Quartz Miner", descShort: "Clicker", descLong: "Mine resources for platform currency.", currentBid: 35000 },
-  { id: 6, title: "Legacy Auctions", descShort: "Retro Loot", descLong: "Timed bidding on vintage game items.", currentBid: 95000 },
+  { id: 1, title: "Emerald Plinko", descShort: "High Stakes", descLong: "Classic drop game with multipliers.", currentBid: 50000, gameType: "plinko" },
+  { id: 2, title: "Deep Sea Mines", descShort: "Strategy", descLong: "Navigate the grid. Avoid explosions.", currentBid: 125000, gameType: "mines" },
+  { id: 3, title: "Neon Hi-Lo", descShort: "Card Duel", descLong: "Predict the next card sequence.", currentBid: 75000, gameType: "hi-lo" },
 ];
 
 export default function LandingPage() {
@@ -18,26 +15,18 @@ export default function LandingPage() {
              style={{ backgroundImage: `linear-gradient(180deg, rgba(30,41,59,0) 50%, rgba(30,41,59,1) 100%), url('https://images.pexels.com/photos/2100018/pexels-photo-2100018.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')` }}>
             <span className="text-emerald-400 font-bold uppercase text-xs tracking-widest mb-1.5">Featured Game: Plinko</span>
             <h2 className="text-4xl font-bold text-white leading-tight">Drop, Win, and Climb the SIA Leaderboard</h2>
-            <button className="mt-5 w-fit bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-transform hover:scale-105">Place Your Bid Now</button>
+            <Link href="/plinko">
+              <button className="mt-5 w-fit bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-transform hover:scale-105">Place Your Bid Now</button>
+            </Link>
         </div>
-
-        {/* <div className="h-12 w-full rounded-2xl bg-[#26354D] border border-border flex items-center px-6 text-sm text-slate-300 font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 mr-3 animate-pulse"></span>
-          Live Bidding Update: Item #302 (Vintage Cartridge) just closed at P 125,000. Next round in 2 minutes.
-        </div> */}
 
         <div className="flex items-center justify-between gap-4">
           <h3 className="text-2xl font-bold uppercase tracking-wide font-sans text-slate-100">
             Games
           </h3>
-          <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-400">View (6 of 12)</span>
-              <button className="bg-card p-2 rounded-lg border border-border text-slate-200">←</button>
-              <button className="bg-card p-2 rounded-lg border border-border text-slate-200">→</button>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {games.map((game) => (
             <div key={game.id} className="bg-card rounded-2xl border border-border overflow-hidden transition-all hover:border-emerald-700 group">
               <div className="aspect-[4/3] w-full border-b border-border bg-slate-800 flex items-center justify-center">
@@ -64,9 +53,9 @@ export default function LandingPage() {
                   <Link href={`/games/${game.id}`} className="flex-1 text-center bg-slate-700 text-white font-bold py-2 rounded-lg hover:bg-slate-600">
                     View Info
                   </Link>
-                  <button className="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700">
+                  <Link href={`/${game.gameType}`} className="flex-1 text-center bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700">
                     Join Arena
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
