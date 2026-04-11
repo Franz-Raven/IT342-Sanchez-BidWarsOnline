@@ -31,10 +31,10 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
       <div className="flex flex-col justify-center px-8 py-12 md:w-1/2 md:px-16 lg:px-32">
-        <h1 className="text-5xl font-extrabold tracking-tighter text-foreground sm:text-6xl uppercase">
+        <h1 className="text-5xl font-extrabold tracking-tighter text-foreground sm:text-8xl uppercase">
           BID<span className="text-brand-gold">WARS</span>
         </h1>
-        <p className="mt-2 text-sm font-bold tracking-widest text-foreground/70 uppercase">
+        <p className="mt-2 ml-1 text-xl font-bold tracking-widest text-foreground/70 uppercase">
           Start your gaming journey now!
         </p>
       </div>

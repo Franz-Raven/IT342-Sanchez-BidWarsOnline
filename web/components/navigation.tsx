@@ -1,0 +1,243 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { Menu, X, Shield } from "lucide-react"
+
+const getInitialUser = () => {
+  if (typeof window === "undefined") return null
+  try {
+    const token = localStorage.getItem("token")
+    const userData = localStorage.getItem("user")
+    if (token && userData) {
+      return JSON.parse(userData)
+    }
+  } catch (error) {
+    console.error("Failed to parse user data:", error)
+    localStorage.removeItem("user")
+    localStorage.removeItem("token")
+  }
+  return null
+}
+
+export default function Navigation() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<any>(getInitialUser())
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("token")
+      const userData = localStorage.getItem("user")
+      if (token && userData) {
+        try {
+          setUser(JSON.parse(userData))
+        } catch (error) {
+          console.error("Failed to parse user data:", error)
+          localStorage.removeItem("user")
+          localStorage.removeItem("token")
+          setUser(null)
+        }
+      } else {
+        setUser(null)
+      }
+    }
+
+    checkAuth()
+    window.addEventListener("storage", checkAuth)
+    window.addEventListener("authChange", checkAuth)
+
+    return () => {
+      window.removeEventListener("storage", checkAuth)
+      window.removeEventListener("authChange", checkAuth)
+    }
+  }, [pathname])
+
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    setUser(null)
+    window.dispatchEvent(new Event("authChange"))
+    router.push("/login")
+  }
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/")
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/news", label: "News" },
+    { href: "/about", label: "About" },
+  ]
+
+  return (
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-700 bg-slate-900">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <h1 className="text-xl font-bold font-sans tracking-tight text-white">
+              BidWars <span className="font-light text-slate-300">Online</span>
+            </h1>
+          </Link>
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors ${
+                  isActive(link.href)
+                    ? "text-emerald-400 border-b-2 border-emerald-400"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            
+            {user?.isAdmin && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                  isActive("/admin")
+                    ? "text-emerald-400 border-b-2 border-emerald-400"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5 text-slate-300" />
+            ) : (
+              <Menu className="w-5 h-5 text-slate-300" />
+            )}
+          </button>
+
+          {/* User Section */}
+          <div className="hidden md:flex items-center gap-4">
+            {user ? (
+              <>
+                <span className="text-sm text-slate-400 truncate max-w-[150px]">
+                  {user.email}
+                </span>
+                
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-1.5 rounded-full bg-slate-700 text-white font-semibold text-sm hover:bg-slate-600 transition-colors uppercase tracking-tight"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="px-4 py-1.5 rounded-full border border-slate-600 text-slate-300 font-semibold text-sm hover:text-white hover:border-slate-400 transition-colors uppercase tracking-tight"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-1.5 rounded-full bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-colors uppercase tracking-tight"
+                >
+                  Register
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-1.5 rounded-full bg-slate-700 text-white font-semibold text-sm hover:bg-slate-600 transition-colors uppercase tracking-tight"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden pb-4 space-y-2 border-t border-slate-700">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isActive(link.href)
+                    ? "bg-emerald-600/20 text-emerald-400"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            
+            {user?.isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isActive("/admin")
+                    ? "bg-emerald-600/20 text-emerald-400"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
+
+            {/* Mobile User Section */}
+            <div className="border-t border-slate-700 mt-4 pt-4 space-y-2">
+              {user ? (
+                <>
+                  <div className="px-4 py-2 text-sm text-slate-400">
+                    {user.email}
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full text-left px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium hover:bg-slate-700 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 rounded-lg border border-slate-600 text-slate-300 font-medium hover:bg-slate-800 transition-colors text-center"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors text-center"
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  )
+}
