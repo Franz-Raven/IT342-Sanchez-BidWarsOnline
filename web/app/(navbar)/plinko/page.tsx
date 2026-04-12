@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { placeBet } from "@/lib/api/games";
+import { getWallet } from "@/lib/api/wallet";
 import { GameResult } from "@/types/game";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
@@ -12,12 +13,22 @@ export default function PlinkoPage() {
   const [betAmount, setBetAmount] = useState<string>("10");
   const [riskLevel, setRiskLevel] = useState<string>("MEDIUM");
   const [isDropping, setIsDropping] = useState<boolean>(false);
-  const [balance, setBalance] = useState<number>(1000000);
+  const [balance, setBalance] = useState<number>(0);
   const [latestResult, setLatestResult] = useState<GameResult | null>(null);
   const [error, setError] = useState<string>("");
   const stompClientRef = useRef<Client | null>(null);
 
   useEffect(() => {
+    getWallet()
+      .then((res) => {
+        if (res.success && res.data) {
+          setBalance(parseFloat(res.data.balance));
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch wallet:", err);
+      });
+
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
     
@@ -41,6 +52,7 @@ export default function PlinkoPage() {
           try {
             const walletUpdate = JSON.parse(message.body);
             setBalance(walletUpdate.balance);
+            window.dispatchEvent(new Event("walletChange"));
           } catch (err) {
             console.error("Failed to parse wallet update:", err);
           }
@@ -51,6 +63,7 @@ export default function PlinkoPage() {
             const gameResult = JSON.parse(message.body);
             setLatestResult(gameResult);
             setBalance(gameResult.newBalance);
+            window.dispatchEvent(new Event("walletChange"));
             setIsDropping(false);
           } catch (err) {
             console.error("Failed to parse game result:", err);
@@ -113,6 +126,7 @@ export default function PlinkoPage() {
       });
 
       setBalance(response.newBalance);
+      window.dispatchEvent(new Event("walletChange"));
       setIsDropping(false);
     } catch (err: any) {
       setError(err.message || "Failed to place bet");
@@ -124,19 +138,11 @@ export default function PlinkoPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      <header className="w-full border-b border-border bg-background/50 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-[100rem] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
-          <Link href="/landing" className="text-xl font-bold text-white hover:text-emerald-400 transition-colors">
-            ← Back to Games
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="bg-card px-4 py-2 rounded-full border border-border flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-              <span className="text-yellow-400 font-bold">₱ {balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-          </div>
+        <div className="max-w-[100rem] px-6 lg:px-10 py-4 flex justify-start">
+            <Link href="/landing" className="text-xl font-bold text-white -mb-8 hover:text-emerald-400 transition-colors">
+                ←
+            </Link>
         </div>
-      </header>
 
       <main className="flex-1 max-w-[100rem] mx-auto px-6 lg:px-10 py-8 w-full">
         <div className="mb-8">
