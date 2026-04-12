@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { placeBet } from "@/lib/api/games";
+import { placePlinkoBet } from "@/lib/api/plinko";
 import { getWallet } from "@/lib/api/wallet";
-import { GameResult } from "@/types/game";
+import { PlinkoResult } from "@/types/plinko";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
@@ -14,7 +14,7 @@ export default function PlinkoPage() {
   const [riskLevel, setRiskLevel] = useState<string>("MEDIUM");
   const [isDropping, setIsDropping] = useState<boolean>(false);
   const [balance, setBalance] = useState<number>(0);
-  const [latestResult, setLatestResult] = useState<GameResult | null>(null);
+  const [latestResult, setLatestResult] = useState<PlinkoResult | null>(null);
   const [error, setError] = useState<string>("");
   const stompClientRef = useRef<Client | null>(null);
 
@@ -107,24 +107,14 @@ export default function PlinkoPage() {
     setIsDropping(true);
 
     try {
-      const response = await placeBet({
-        gameType: "PLINKO",
+      const response = await placePlinkoBet({
         betAmount: betAmountNum,
         config: {
-          risk: riskLevel,
-          rows: 16,
+          risk: riskLevel as 'LOW' | 'MEDIUM' | 'HIGH',
         },
       });
 
-      setLatestResult({
-        transactionId: response.transactionId,
-        resultMultiplier: response.resultMultiplier,
-        payout: response.payout,
-        newBalance: response.newBalance,
-        gameType: "PLINKO",
-        timestamp: new Date().toISOString(),
-      });
-
+      setLatestResult(response);
       setBalance(response.newBalance);
       window.dispatchEvent(new Event("walletChange"));
       setIsDropping(false);
