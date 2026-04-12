@@ -128,14 +128,12 @@ export default function PlinkoPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-        <div className="max-w-[100rem] px-6 lg:px-10 py-4 flex justify-start">
-            <Link href="/landing" className="text-xl font-bold text-white -mb-8 hover:text-emerald-400 transition-colors">
-                ←
-            </Link>
-        </div>
 
       <main className="flex-1 max-w-[100rem] mx-auto px-6 lg:px-10 py-8 w-full">
-        <div className="mb-8">
+        <Link href="/landing" className="text-xl font-bold text-white hover:text-emerald-400 transition-colors">
+            ←
+        </Link>
+        <div className="my-8">
           <h1 className="text-5xl font-bold text-white uppercase tracking-tight">Plinko</h1>
           <p className="text-slate-400 mt-2">Drop the ball and watch your multiplier stack up</p>
         </div>
