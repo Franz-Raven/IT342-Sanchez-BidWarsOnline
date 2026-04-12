@@ -103,6 +103,31 @@ export default function HiLoPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
+      if (sessionId && gameState === "PLAYING") {
+        e.preventDefault();
+        e.returnValue = '';
+        
+        const token = localStorage.getItem('token');
+        const cashOutData = {
+          betAmount: parseFloat(betAmount),
+          config: { sessionId, cashOut: true }
+        };
+        
+        navigator.sendBeacon(
+          'http://localhost:8080/api/games/hilo/bet',
+          new Blob([JSON.stringify(cashOutData)], {
+            type: 'application/json'
+          })
+        );
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [sessionId, gameState, betAmount]);
+
   const handleGameResult = (result: HiloResult) => {
     setFlipCard(true);
     
