@@ -74,7 +74,7 @@ public class AuthService {
             );
             User savedUser = userRepository.save(newUser);
 
-            Wallet newWallet = new Wallet(savedUser, BigDecimal.ZERO, "USD");
+            Wallet newWallet = new Wallet(savedUser, new BigDecimal("100000"), "USD");
             walletRepository.save(newWallet);
 
             String jwtToken = jwtService.generateToken(savedUser.getId(), savedUser.getEmail(), savedUser.getUsername());
@@ -116,10 +116,8 @@ public class AuthService {
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             String supabaseToken = response.getBody().get("access_token").toString();
 
-            // Check if user exists locally, create if not
             User user = userRepository.findByEmail(request.getEmail()).orElse(null);
             if (user == null) {
-                // Create local user record for Supabase-authenticated user
                 String hashedPassword = passwordEncoder.encode(request.getPassword());
                 user = new User(
                         request.getEmail(),
@@ -131,7 +129,7 @@ public class AuthService {
                 user = userRepository.save(user);
 
                 // Create wallet
-                Wallet wallet = new Wallet(user, BigDecimal.ZERO, "USD");
+                Wallet wallet = new Wallet(user, new BigDecimal("100000"), "USD");
                 walletRepository.save(wallet);
             }
 
