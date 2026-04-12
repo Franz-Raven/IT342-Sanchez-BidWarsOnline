@@ -3,7 +3,10 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
+
 import { Menu, X, Shield, User } from "lucide-react"
+import { getWallet } from "@/lib/api/wallet"
+import { Wallet } from "@/types/wallet"
 
 const getInitialUser = () => {
   if (typeof window === "undefined") return null
@@ -21,10 +24,12 @@ const getInitialUser = () => {
   return null
 }
 
+
 export default function Navigation() {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(getInitialUser())
+  const [wallet, setWallet] = useState<Wallet | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
@@ -56,6 +61,30 @@ export default function Navigation() {
       window.removeEventListener("authChange", checkAuth)
     }
   }, [pathname])
+
+  // Fetch wallet when user changes
+  useEffect(() => {
+    const fetchWallet = () => {
+      if (user) {
+        getWallet()
+          .then((res) => {
+            setWallet(res.data)
+          })
+          .catch(() => setWallet(null))
+      } else {
+        setWallet(null)
+      }
+    }
+
+    fetchWallet()
+
+    // Listen for wallet changes from other components (e.g., Plinko page)
+    window.addEventListener("walletChange", fetchWallet)
+
+    return () => {
+      window.removeEventListener("walletChange", fetchWallet)
+    }
+  }, [user])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -150,7 +179,9 @@ export default function Navigation() {
               <>
                 <div className="bg-card px-4 py-1.5 rounded-full border border-border flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                  <span className="text-yellow-400 font-medium">P 10,000,000</span>
+                  <span className="text-yellow-400 font-medium">
+                    P {wallet ? Number(wallet.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-"}
+                  </span>
                 </div>
 
                 <button className="bg-emerald-600 text-white font-semibold text-sm px-4 py-1.5 rounded-full hover:bg-emerald-700 transition-colors uppercase tracking-tight">
