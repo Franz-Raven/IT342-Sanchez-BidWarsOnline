@@ -265,4 +265,34 @@ public class HiloService {
             return timestamp;
         }
     }
+
+    public HiloResponse getActiveSession(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Optional<HiLoSession> sessionOpt = sessionRepository.findByUserAndStatus(user, HiLoSession.SessionStatus.ACTIVE);
+        
+        if (sessionOpt.isEmpty()) {
+            return null;
+        }
+
+        HiLoSession session = sessionOpt.get();
+        Wallet wallet = walletRepository.findByUser(user)
+                .orElseThrow(() -> new IllegalArgumentException("Wallet not found"));
+
+        int currentCardRank = session.getCurrentCardRank();
+
+        HiloResponse response = new HiloResponse();
+        response.setSessionId(session.getId());
+        response.setCurrentCardRank(HiLoMathUtil.rankToString(currentCardRank));
+        response.setCurrentCardSuit(getRandomSuit());
+        response.setCurrentCardValue(currentCardRank);
+        response.setStreakCount(session.getStreakCount());
+        response.setCurrentPot(session.getCurrentPot());
+        response.setHigherProbability(HiLoMathUtil.calculateProbability(currentCardRank, "HIGHER"));
+        response.setLowerProbability(HiLoMathUtil.calculateProbability(currentCardRank, "LOWER"));
+        response.setNewBalance(wallet.getBalance());
+        response.setStatus("ACTIVE");
+        return response;
+    }
 }

@@ -21,4 +21,5 @@ export interface MinesResult {
   finalPayout?: number;
   newBalance: number;
   status: string;
+  betAmount?: number;
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { placeMinesBet } from "@/lib/api/mines";
+import { placeMinesBet, checkActiveSession } from "@/lib/api/mines";
 import { getWallet } from "@/lib/api/wallet";
 import { MinesResult } from "@/types/mines";
 import { Client } from "@stomp/stompjs";
@@ -24,6 +24,8 @@ export default function MinesPage() {
   const [error, setError] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showActiveSessionModal, setShowActiveSessionModal] = useState<boolean>(false);
+  const [activeSessionData, setActiveSessionData] = useState<MinesResult | null>(null);
   const stompClientRef = useRef<Client | null>(null);
 
   useEffect(() => {
@@ -33,6 +35,17 @@ export default function MinesPage() {
     const checkLoading = () => {
       if (walletLoaded && wsConnected) {
         setIsLoading(false);
+        // Check for active session after loading is complete
+        checkActiveSession()
+          .then((result) => {
+            if (result.hasActiveSession && result.session) {
+              setActiveSessionData(result.session);
+              setShowActiveSessionModal(true);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to check active session:", err);
+          });
       }
     };
 
@@ -249,6 +262,45 @@ export default function MinesPage() {
     setIsProcessing(false);
   };
 
+  const handleContinueSession = () => {
+    if (!activeSessionData) return;
+    
+    setGameState("PLAYING");
+    setSessionId(activeSessionData.sessionId);
+    setClickedTiles(activeSessionData.clickedTiles || []);
+    setCurrentMultiplier(activeSessionData.currentMultiplier || 1.0);
+    setBetAmount(activeSessionData.betAmount?.toString() || '10');
+    setMinesCount(activeSessionData.minesCount || 3);
+    setShowActiveSessionModal(false);
+    setActiveSessionData(null);
+  };
+
+  const handleCashOutSession = async () => {
+    if (!activeSessionData) return;
+    
+    setIsProcessing(true);
+    setError("");
+
+    try {
+      const response = await placeMinesBet({
+        betAmount: activeSessionData.betAmount || 0,
+        config: {
+          sessionId: activeSessionData.sessionId,
+          cashOut: true,
+        },
+      });
+
+      setBalance(response.newBalance);
+      window.dispatchEvent(new Event("walletChange"));
+      setShowActiveSessionModal(false);
+      setActiveSessionData(null);
+      setIsProcessing(false);
+    } catch (err: any) {
+      setError(err.message || "Failed to cash out");
+      setIsProcessing(false);
+    }
+  };
+
   const getTileContent = (index: number) => {
     if (gameState === "IDLE") return "";
     
@@ -444,6 +496,63 @@ export default function MinesPage() {
           </div>
         </div>
       </main>
+
+      {showActiveSessionModal && activeSessionData && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h2 className="text-2xl font-bold text-white mb-4">Active Session Found</h2>
+            <p className="text-slate-300 mb-6">
+              You have an active Mines game session. Would you like to continue playing or cash out?
+            </p>
+            
+            <div className="space-y-3 mb-6 bg-slate-800/50 rounded-lg p-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Bet Amount:</span>
+                <span className="text-white font-semibold">${activeSessionData.betAmount?.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Mines:</span>
+                <span className="text-white font-semibold">{activeSessionData.minesCount}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Gems Found:</span>
+                <span className="text-white font-semibold">{activeSessionData.clickedTiles?.length || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Current Multiplier:</span>
+                <span className="text-emerald-400 font-bold text-lg">{activeSessionData.currentMultiplier?.toFixed(2)}x</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Potential Payout:</span>
+                <span className="text-emerald-400 font-bold text-lg">
+                  ${((activeSessionData.betAmount || 0) * (activeSessionData.currentMultiplier || 1)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCashOutSession}
+                disabled={isProcessing}
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? 'Processing...' : 'CASH OUT'}
+              </button>
+              <button
+                onClick={handleContinueSession}
+                disabled={isProcessing}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                CONTINUE
+              </button>
+            </div>
+
+            {error && (
+              <p className="mt-4 text-red-400 text-sm text-center">{error}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

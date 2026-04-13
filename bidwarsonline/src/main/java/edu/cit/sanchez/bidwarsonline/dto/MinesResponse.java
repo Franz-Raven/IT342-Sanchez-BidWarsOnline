@@ -17,6 +17,7 @@ public class MinesResponse {
     private BigDecimal finalPayout;
     private BigDecimal newBalance;
     private String status;
+    private BigDecimal betAmount;
 
     public MinesResponse() {}
 
@@ -49,4 +50,7 @@ public class MinesResponse {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public BigDecimal getBetAmount() { return betAmount; }
+    public void setBetAmount(BigDecimal betAmount) { this.betAmount = betAmount; }
 }
