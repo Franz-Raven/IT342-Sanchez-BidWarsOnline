@@ -78,6 +78,7 @@ export default function HiLoPage() {
           resetGame();
         }, 2000);
       } else {
+        setGameState("PLAYING");
         setCurrentCardRank(result.currentCardRank);
         setCurrentCardSuit(result.currentCardSuit);
         setCurrentCardValue(result.currentCardValue);

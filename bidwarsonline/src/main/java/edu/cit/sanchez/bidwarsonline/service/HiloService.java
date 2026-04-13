@@ -25,7 +25,7 @@ public class HiloService {
 
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final String[] SUITS = {"hearts", "diamonds", "clubs", "spades"};
-    private static final BigDecimal MAX_PAYOUT = new BigDecimal("50000.00");
+    private static final BigDecimal MAX_PAYOUT = new BigDecimal("1000000000.00");
     
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
