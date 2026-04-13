@@ -8,27 +8,10 @@ import { Menu, X, Shield, User } from "lucide-react"
 import { getWallet } from "@/lib/api/wallet"
 import { Wallet } from "@/types/wallet"
 
-const getInitialUser = () => {
-  if (typeof window === "undefined") return null
-  try {
-    const token = localStorage.getItem("token")
-    const userData = localStorage.getItem("user")
-    if (token && userData) {
-      return JSON.parse(userData)
-    }
-  } catch (error) {
-    console.error("Failed to parse user data:", error)
-    localStorage.removeItem("user")
-    localStorage.removeItem("token")
-  }
-  return null
-}
-
-
 export default function Navigation() {
   const pathname = usePathname()
   const router = useRouter()
-  const [user, setUser] = useState<any>(getInitialUser())
+  const [user, setUser] = useState<any>(null)
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)

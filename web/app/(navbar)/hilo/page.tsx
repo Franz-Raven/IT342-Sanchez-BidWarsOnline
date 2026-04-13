@@ -8,6 +8,7 @@ import { getWallet } from "@/lib/api/wallet";
 import { HiloResult } from "@/types/hilo";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { Loader2 } from "lucide-react";
 
 type GameState = "IDLE" | "PLAYING" | "BUSTED" | "CASHED_OUT";
 
@@ -28,17 +29,31 @@ export default function HiLoPage() {
   const [error, setError] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [flipCard, setFlipCard] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const stompClientRef = useRef<Client | null>(null);
 
   useEffect(() => {
+    let walletLoaded = false;
+    let wsConnected = false;
+
+    const checkLoading = () => {
+      if (walletLoaded && wsConnected) {
+        setIsLoading(false);
+      }
+    };
+
     getWallet()
       .then((res) => {
         if (res.success && res.data) {
           setBalance(parseFloat(res.data.balance));
         }
+        walletLoaded = true;
+        checkLoading();
       })
       .catch((err) => {
         console.error("Failed to fetch wallet:", err);
+        walletLoaded = true;
+        checkLoading();
       });
 
     const token = localStorage.getItem("token");
@@ -60,6 +75,8 @@ export default function HiLoPage() {
       },
       onConnect: () => {
         console.log("WebSocket connected");
+        wsConnected = true;
+        checkLoading();
         stompClient.subscribe("/user/topic/wallet", (message) => {
           try {
             const walletUpdate = JSON.parse(message.body);
@@ -294,6 +311,18 @@ export default function HiLoPage() {
       ? "text-red-500"
       : "text-slate-900";
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-16 h-16 text-emerald-500 animate-spin" />
+          <p className="text-white font-bold text-2xl">Loading Neon Hi-Lo...</p>
+          <p className="text-slate-400 text-sm">Shuffling the deck</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">

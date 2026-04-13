@@ -7,7 +7,6 @@ const games = [
     title: "Emerald Plinko", 
     descShort: "High Stakes", 
     descLong: "Watch as the gravity-bound sphere dances through a labyrinth of emerald pegs, carving a path toward massive multipliers.", 
-    currentBid: 50000, 
     gameType: "plinko" 
   },
   { 
@@ -15,7 +14,6 @@ const games = [
     title: "Deep Sea Mines", 
     descShort: "Strategy", 
     descLong: "Uncover the treasures of the abyss while navigating around volatile explosives in this high-tension game of calculated risk.", 
-    currentBid: 125000, 
     gameType: "mines" 
   },
   { 
@@ -23,7 +21,6 @@ const games = [
     title: "Neon Hi-Lo", 
     descShort: "Card Duel", 
     descLong: "Step into a vibrant arena of probability where the next card could signify your triumph or your downfall. ", 
-    currentBid: 75000, 
     gameType: "hilo" 
   },
 ];

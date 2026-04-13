@@ -8,6 +8,7 @@ import { getWallet } from "@/lib/api/wallet";
 import { MinesResult } from "@/types/mines";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { Loader2 } from "lucide-react";
 
 type GameState = "IDLE" | "PLAYING" | "BUSTED" | "CASHED_OUT";
 
@@ -22,17 +23,31 @@ export default function MinesPage() {
   const [gridState, setGridState] = useState<boolean[] | null>(null);
   const [error, setError] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const stompClientRef = useRef<Client | null>(null);
 
   useEffect(() => {
+    let walletLoaded = false;
+    let wsConnected = false;
+
+    const checkLoading = () => {
+      if (walletLoaded && wsConnected) {
+        setIsLoading(false);
+      }
+    };
+
     getWallet()
       .then((res) => {
         if (res.success && res.data) {
           setBalance(parseFloat(res.data.balance));
         }
+        walletLoaded = true;
+        checkLoading();
       })
       .catch((err) => {
         console.error("Failed to fetch wallet:", err);
+        walletLoaded = true;
+        checkLoading();
       });
 
     const token = localStorage.getItem("token");
@@ -44,6 +59,8 @@ export default function MinesPage() {
         Authorization: `Bearer ${token}`,
       },
       onConnect: () => {
+        wsConnected = true;
+        checkLoading();
         stompClient.subscribe("/user/topic/wallet", (message) => {
           try {
             const walletUpdate = JSON.parse(message.body);
@@ -277,6 +294,18 @@ export default function MinesPage() {
 
     return `${baseClass} bg-slate-800 border-slate-700 cursor-not-allowed`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-16 h-16 text-emerald-500 animate-spin" />
+          <p className="text-white font-bold text-2xl">Loading Deep Sea Mines...</p>
+          <p className="text-slate-400 text-sm">Preparing the minefield</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
