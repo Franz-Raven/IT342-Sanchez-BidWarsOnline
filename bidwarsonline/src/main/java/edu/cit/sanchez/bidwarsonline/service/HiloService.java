@@ -31,20 +31,17 @@ public class HiloService {
     private final WalletRepository walletRepository;
     private final BetRecordRepository betRecordRepository;
     private final HiLoSessionRepository sessionRepository;
-    private final GameEngineService gameEngineService;
     private final SimpMessagingTemplate messagingTemplate;
 
     public HiloService(UserRepository userRepository,
                        WalletRepository walletRepository,
                        BetRecordRepository betRecordRepository,
                        HiLoSessionRepository sessionRepository,
-                       GameEngineService gameEngineService,
                        SimpMessagingTemplate messagingTemplate) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.betRecordRepository = betRecordRepository;
         this.sessionRepository = sessionRepository;
-        this.gameEngineService = gameEngineService;
         this.messagingTemplate = messagingTemplate;
     }
 

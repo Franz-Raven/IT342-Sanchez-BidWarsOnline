@@ -51,6 +51,7 @@ public class PlinkoController {
 
             String risk = "MEDIUM";
             if (request.getConfig() != null && request.getConfig() instanceof java.util.Map) {
+                @SuppressWarnings("unchecked")
                 java.util.Map<String, Object> configMap = (java.util.Map<String, Object>) request.getConfig();
                 if (configMap.containsKey("risk")) {
                     risk = configMap.get("risk").toString();
