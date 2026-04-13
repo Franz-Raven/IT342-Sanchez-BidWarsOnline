@@ -31,6 +31,7 @@ public class HiloController {
             Boolean cashOut = false;
 
             if (request.getConfig() != null && request.getConfig() instanceof java.util.Map) {
+                @SuppressWarnings("unchecked")
                 java.util.Map<String, Object> configMap = (java.util.Map<String, Object>) request.getConfig();
                 if (configMap.containsKey("prediction")) {
                     prediction = configMap.get("prediction").toString();

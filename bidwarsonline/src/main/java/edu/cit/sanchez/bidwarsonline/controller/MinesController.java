@@ -1,7 +1,6 @@
 package edu.cit.sanchez.bidwarsonline.controller;
 
 import edu.cit.sanchez.bidwarsonline.dto.PlaceBetRequest;
-import edu.cit.sanchez.bidwarsonline.dto.MinesResponse;
 import edu.cit.sanchez.bidwarsonline.service.MinesService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;

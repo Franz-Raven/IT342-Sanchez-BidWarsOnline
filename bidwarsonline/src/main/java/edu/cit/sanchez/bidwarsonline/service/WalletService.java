@@ -1,9 +1,7 @@
 package edu.cit.sanchez.bidwarsonline.service;
 
 import edu.cit.sanchez.bidwarsonline.dto.WalletDto;
-import edu.cit.sanchez.bidwarsonline.entity.User;
 import edu.cit.sanchez.bidwarsonline.entity.Wallet;
-import edu.cit.sanchez.bidwarsonline.repository.UserRepository;
 import edu.cit.sanchez.bidwarsonline.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,11 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WalletService {
     private final WalletRepository walletRepository;
-    private final UserRepository userRepository;
 
-    public WalletService(WalletRepository walletRepository, UserRepository userRepository) {
+    public WalletService(WalletRepository walletRepository) {
         this.walletRepository = walletRepository;
-        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)

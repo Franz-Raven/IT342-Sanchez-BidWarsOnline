@@ -60,7 +60,7 @@ public class AuthService {
         body.put("data", data);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, createHeaders());
-
+        
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
