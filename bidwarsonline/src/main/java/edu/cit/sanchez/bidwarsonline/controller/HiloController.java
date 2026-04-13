@@ -21,6 +21,30 @@ public class HiloController {
         this.hiloService = hiloService;
     }
 
+    @GetMapping("/active-session")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> checkActiveSession() {
+        try {
+            Long userId = extractUserIdFromToken();
+            var session = hiloService.getActiveSession(userId);
+            
+            if (session == null) {
+                return ResponseEntity.ok(new ApiResponse<>(true, 
+                    java.util.Map.of("hasActiveSession", false)));
+            }
+            
+            return ResponseEntity.ok(new ApiResponse<>(true, 
+                java.util.Map.of(
+                    "hasActiveSession", true,
+                    "session", session
+                )));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                new ApiResponse<>(false, null,
+                    new ApiResponse.ErrorDetails("ERR-001", e.getMessage()))
+            );
+        }
+    }
+
     @PostMapping("/bet")
     public ResponseEntity<ApiResponse<HiloResponse>> placeBet(@RequestBody PlaceBetRequest request) {
         try {

@@ -20,6 +20,25 @@ public class MinesController {
         this.minesService = minesService;
     }
 
+    @GetMapping("/active-session")
+    public ResponseEntity<?> checkActiveSession() {
+        try {
+            String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+            var session = minesService.getActiveSession(userId);
+            
+            if (session == null) {
+                return ResponseEntity.ok(Map.of("hasActiveSession", false));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "hasActiveSession", true,
+                "session", session
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/bet")
     public ResponseEntity<?> placeBet(@RequestBody PlaceBetRequest request) {
         try {

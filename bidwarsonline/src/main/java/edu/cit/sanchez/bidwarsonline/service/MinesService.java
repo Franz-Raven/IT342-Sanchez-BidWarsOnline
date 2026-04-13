@@ -72,11 +72,13 @@ public class MinesService {
         
         sessionRepository.save(session);
 
+        BigDecimal nextMultiplier = MinesMathUtil.calculateMultiplier(minesCount, 1);
+
         MinesResponse response = new MinesResponse();
         response.setSessionId(session.getId());
         response.setMinesCount(minesCount);
         response.setClickedTiles(new ArrayList<>());
-        response.setCurrentMultiplier(BigDecimal.ONE);
+        response.setCurrentMultiplier(nextMultiplier);
         response.setNewBalance(wallet.getBalance());
         response.setStatus("ACTIVE");
         return response;
@@ -128,8 +130,10 @@ public class MinesService {
 
         session.getClickedTiles().add(tileIndex);
         int gemsRevealed = session.getClickedTiles().size();
-        BigDecimal newMultiplier = MinesMathUtil.calculateMultiplier(session.getMinesCount(), gemsRevealed);
-        session.setCurrentMultiplier(newMultiplier);
+        
+        // Store CURRENT multiplier in session (for cashout)
+        BigDecimal currentMultiplier = MinesMathUtil.calculateMultiplier(session.getMinesCount(), gemsRevealed);
+        session.setCurrentMultiplier(currentMultiplier);
 
         int totalGems = 25 - session.getMinesCount();
         if (gemsRevealed == totalGems) {
@@ -140,11 +144,14 @@ public class MinesService {
 
         Wallet wallet = walletRepository.findByUser(session.getUser()).get();
 
+        // Return NEXT multiplier to frontend (for display)
+        BigDecimal nextMultiplier = MinesMathUtil.calculateMultiplier(session.getMinesCount(), gemsRevealed + 1);
+
         MinesResponse response = new MinesResponse();
         response.setSessionId(session.getId());
         response.setMinesCount(session.getMinesCount());
         response.setClickedTiles(session.getClickedTiles());
-        response.setCurrentMultiplier(newMultiplier);
+        response.setCurrentMultiplier(nextMultiplier);
         response.setNewBalance(wallet.getBalance());
         response.setStatus("ACTIVE");
         return response;
@@ -250,5 +257,33 @@ public class MinesService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to deserialize grid", e);
         }
+    }
+
+    public MinesResponse getActiveSession(String userId) {
+        User user = userRepository.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Optional<MinesSession> sessionOpt = sessionRepository.findByUserAndStatus(user, MinesSession.SessionStatus.ACTIVE);
+        
+        if (sessionOpt.isEmpty()) {
+            return null;
+        }
+
+        MinesSession session = sessionOpt.get();
+        Wallet wallet = walletRepository.findByUser(user)
+                .orElseThrow(() -> new IllegalArgumentException("Wallet not found"));
+
+        int gemsRevealed = session.getClickedTiles().size();
+        BigDecimal nextMultiplier = MinesMathUtil.calculateMultiplier(session.getMinesCount(), gemsRevealed + 1);
+
+        MinesResponse response = new MinesResponse();
+        response.setSessionId(session.getId());
+        response.setMinesCount(session.getMinesCount());
+        response.setClickedTiles(session.getClickedTiles());
+        response.setCurrentMultiplier(nextMultiplier);
+        response.setNewBalance(wallet.getBalance());
+        response.setStatus("ACTIVE");
+        response.setBetAmount(session.getBetAmount());
+        return response;
     }
 }

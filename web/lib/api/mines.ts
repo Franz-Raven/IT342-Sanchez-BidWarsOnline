@@ -21,3 +21,20 @@ export async function placeMinesBet(request: MinesBetRequest): Promise<MinesResu
 
   return response.json();
 }
+
+export async function checkActiveSession(): Promise<{ hasActiveSession: boolean; session?: MinesResult }> {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_BASE_URL}/api/games/mines/active-session`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to check active session');
+  }
+
+  return response.json();
+}

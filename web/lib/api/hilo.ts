@@ -22,3 +22,21 @@ export async function placeHiloBet(request: HiloBetRequest): Promise<HiloResult>
   const data = await response.json();
   return data.data;
 }
+
+export async function checkActiveSession(): Promise<{ hasActiveSession: boolean; session?: HiloResult }> {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_BASE_URL}/api/games/hilo/active-session`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to check active session');
+  }
+
+  const data = await response.json();
+  return data.data;
+}
