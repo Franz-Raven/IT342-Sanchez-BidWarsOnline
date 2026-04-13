@@ -29,4 +29,5 @@ export interface HiloResult {
   finalPayout?: number;
   newBalance: number;
   status: string;
+  betAmount?: number;
 }

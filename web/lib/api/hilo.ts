@@ -38,5 +38,8 @@ export async function checkActiveSession(): Promise<{ hasActiveSession: boolean;
   }
 
   const data = await response.json();
-  return data.data;
+  return {
+    hasActiveSession: data.data.hasActiveSession,
+    session: data.data.session
+  };
 }

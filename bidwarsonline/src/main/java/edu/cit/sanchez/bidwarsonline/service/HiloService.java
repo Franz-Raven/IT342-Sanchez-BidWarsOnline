@@ -293,6 +293,7 @@ public class HiloService {
         response.setLowerProbability(HiLoMathUtil.calculateProbability(currentCardRank, "LOWER"));
         response.setNewBalance(wallet.getBalance());
         response.setStatus("ACTIVE");
+        response.setBetAmount(session.getInitialBetAmount());
         return response;
     }
 }
