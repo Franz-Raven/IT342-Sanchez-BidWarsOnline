@@ -176,7 +176,7 @@ export default function MinesPage() {
       setGameState("PLAYING");
       setSessionId(response.sessionId);
       setClickedTiles([]);
-      setCurrentMultiplier(1.0);
+      setCurrentMultiplier(response.currentMultiplier || 1.0);
       setBalance(response.newBalance);
       window.dispatchEvent(new Event("walletChange"));
       setIsProcessing(false);
@@ -375,7 +375,7 @@ export default function MinesPage() {
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-slate-300">Current Multiplier</label>
                     <p className="text-3xl font-bold text-emerald-400">
-                      {currentMultiplier.toFixed(4)}x
+                      {currentMultiplier.toFixed(2)}x
                     </p>
                   </div>
 
