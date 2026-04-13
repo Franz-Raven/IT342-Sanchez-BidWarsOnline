@@ -19,6 +19,7 @@ public class HiloResponse {
     private BigDecimal finalPayout;
     private BigDecimal newBalance;
     private String status;
+    private BigDecimal betAmount;
 
     public HiloResponse() {}
 
@@ -60,4 +61,7 @@ public class HiloResponse {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public BigDecimal getBetAmount() { return betAmount; }
+    public void setBetAmount(BigDecimal betAmount) { this.betAmount = betAmount; }
 }
