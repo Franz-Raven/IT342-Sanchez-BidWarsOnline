@@ -6,39 +6,41 @@ import java.math.RoundingMode;
 public class MinesMathUtil {
     
     private static final BigDecimal HOUSE_EDGE = new BigDecimal("0.97");
-
-    public static long calculateCombination(int n, int r) {
-        if (r > n) return 0;
-        if (r == 0 || r == n) return 1;
-        
-        r = Math.min(r, n - r);
-        
-        long result = 1;
-        for (int i = 0; i < r; i++) {
-            result = result * (n - i) / (i + 1);
-        }
-        return result;
-    }
+    private static final int TOTAL_TILES = 25;
 
     public static BigDecimal calculateMultiplier(int minesCount, int gemsRevealed) {
         if (gemsRevealed == 0) {
             return BigDecimal.ONE;
         }
 
-        int totalTiles = 25;
-        int gemsTotal = totalTiles - minesCount;
-
-        long favorableOutcomes = calculateCombination(gemsTotal, gemsRevealed);
-        long totalOutcomes = calculateCombination(totalTiles, gemsRevealed);
-
-        if (totalOutcomes == 0) {
+        int safeTiles = TOTAL_TILES - minesCount;
+        
+        if (gemsRevealed > safeTiles) {
             return BigDecimal.ONE;
         }
 
-        double probability = (double) favorableOutcomes / totalOutcomes;
-        double baseMultiplier = 1.0 / probability;
-        double finalMultiplier = baseMultiplier * HOUSE_EDGE.doubleValue();
+        BigDecimal probability = BigDecimal.ONE;
+        
+        for (int i = 0; i < gemsRevealed; i++) {
+            int currentSafeTiles = safeTiles - i;
+            int currentTotalTiles = TOTAL_TILES - i;
+            
+            if (currentTotalTiles == 0) {
+                return BigDecimal.ONE;
+            }
+            
+            BigDecimal stepProbability = new BigDecimal(currentSafeTiles)
+                .divide(new BigDecimal(currentTotalTiles), 10, RoundingMode.HALF_UP);
+            probability = probability.multiply(stepProbability);
+        }
 
-        return BigDecimal.valueOf(finalMultiplier).setScale(4, RoundingMode.HALF_UP);
+        if (probability.compareTo(BigDecimal.ZERO) == 0) {
+            return new BigDecimal("999999.99");
+        }
+
+        BigDecimal baseMultiplier = BigDecimal.ONE.divide(probability, 10, RoundingMode.HALF_UP);
+        BigDecimal finalMultiplier = baseMultiplier.multiply(HOUSE_EDGE);
+
+        return finalMultiplier.setScale(2, RoundingMode.HALF_UP);
     }
 }
