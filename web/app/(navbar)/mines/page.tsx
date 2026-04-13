@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { placeMinesBet, checkActiveSession } from "@/lib/api/mines";
-import { getWallet } from "@/lib/api/wallet";
 import { MinesResult } from "@/types/mines";
-import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
-import { Loader2 } from "lucide-react";
+import { useWallet } from "@/hooks/useWallet";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { GameLoading } from "@/components/shared/game-loading";
+import { BalanceDisplay } from "@/components/shared/balance-display";
+import { MinesSessionModal } from "@/components/mines/mines-session-modal";
+import { MinesGameControls } from "@/components/mines/mines-game-controls";
+import { MinesGameStats } from "@/components/mines/mines-game-stats";
+import { MinesResultDisplay } from "@/components/mines/mines-result-display";
+import { MinesGrid } from "@/components/mines/mines-grid";
 
 type GameState = "IDLE" | "PLAYING" | "BUSTED" | "CASHED_OUT";
 
@@ -16,102 +20,72 @@ export default function MinesPage() {
   const [betAmount, setBetAmount] = useState<string>("10");
   const [minesCount, setMinesCount] = useState<number>(3);
   const [gameState, setGameState] = useState<GameState>("IDLE");
-  const [balance, setBalance] = useState<number>(0);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [clickedTiles, setClickedTiles] = useState<number[]>([]);
   const [currentMultiplier, setCurrentMultiplier] = useState<number>(1.0);
   const [gridState, setGridState] = useState<boolean[] | null>(null);
   const [error, setError] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showActiveSessionModal, setShowActiveSessionModal] = useState<boolean>(false);
   const [activeSessionData, setActiveSessionData] = useState<MinesResult | null>(null);
-  const stompClientRef = useRef<Client | null>(null);
+
+  const { balance, setBalance, isLoading: walletLoading } = useWallet();
+
+  const resetGame = useCallback(() => {
+    setGameState("IDLE");
+    setSessionId(null);
+    setClickedTiles([]);
+    setCurrentMultiplier(1.0);
+    setGridState(null);
+    setError("");
+    setIsProcessing(false);
+  }, []);
+
+  const handleGameResult = useCallback((result: MinesResult) => {
+    if (result.isBust) {
+      setGameState("BUSTED");
+      setBalance(result.newBalance);
+      setGridState(result.gridState || null);
+      
+      setTimeout(() => {
+        resetGame();
+      }, 3000);
+    } else if (result.finalPayout || result.isWin) {
+      setGameState("CASHED_OUT");
+      setBalance(result.newBalance);
+      setGridState(result.gridState || null);
+      
+      setTimeout(() => {
+        resetGame();
+      }, 3000);
+    } else {
+      setClickedTiles(result.clickedTiles || []);
+      setCurrentMultiplier(result.currentMultiplier || 1.0);
+    }
+  }, [setBalance, resetGame]);
+
+  const { isConnected } = useWebSocket({
+    gameType: "MINES",
+    onGameResult: handleGameResult,
+    onWalletUpdate: setBalance,
+  });
+
+  const isLoading = walletLoading || !isConnected;
 
   useEffect(() => {
-    let walletLoaded = false;
-    let wsConnected = false;
-
-    const checkLoading = () => {
-      if (walletLoaded && wsConnected) {
-        setIsLoading(false);
-        // Check for active session after loading is complete
-        checkActiveSession()
-          .then((result) => {
-            if (result.hasActiveSession && result.session) {
-              setActiveSessionData(result.session);
-              setShowActiveSessionModal(true);
-            }
-          })
-          .catch((err) => {
-            console.error("Failed to check active session:", err);
-          });
-      }
-    };
-
-    getWallet()
-      .then((res) => {
-        if (res.success && res.data) {
-          setBalance(parseFloat(res.data.balance));
-        }
-        walletLoaded = true;
-        checkLoading();
-      })
-      .catch((err) => {
-        console.error("Failed to fetch wallet:", err);
-        walletLoaded = true;
-        checkLoading();
-      });
-
-    const token = localStorage.getItem("token");
-    
-    const socket = new SockJS("http://localhost:8080/ws-gaming");
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-      onConnect: () => {
-        wsConnected = true;
-        checkLoading();
-        stompClient.subscribe("/user/topic/wallet", (message) => {
-          try {
-            const walletUpdate = JSON.parse(message.body);
-            setBalance(walletUpdate.balance);
-            window.dispatchEvent(new Event("walletChange"));
-          } catch (err) {
-            console.error("Failed to parse wallet update:", err);
+    if (!isLoading) {
+      checkActiveSession()
+        .then((result) => {
+          if (result.hasActiveSession && result.session) {
+            setActiveSessionData(result.session);
+            setShowActiveSessionModal(true);
           }
+        })
+        .catch((err) => {
+          console.error("Failed to check active session:", err);
         });
-
-        stompClient.subscribe("/user/topic/game-results", (message) => {
-          try {
-            const gameResult = JSON.parse(message.body);
-            
-            if (gameResult.gameType === "MINES") {
-              handleGameResult(gameResult);
-            }
-            
-            setIsProcessing(false);
-          } catch (err) {
-            console.error("Failed to parse game result:", err);
-          }
-        });
-      },
-      onStompError: (frame) => {
-        console.error("STOMP error:", frame);
-      },
-    });
-
-    stompClient.activate();
-    stompClientRef.current = stompClient;
-
-    return () => {
-      if (stompClientRef.current?.active) {
-        stompClientRef.current.deactivate();
-      }
-    };
-  }, []);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
@@ -137,31 +111,6 @@ export default function MinesPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [sessionId, gameState, betAmount]);
-
-  const handleGameResult = (result: MinesResult) => {
-    if (result.isBust) {
-      setGameState("BUSTED");
-      setBalance(result.newBalance);
-      setGridState(result.gridState || null);
-      window.dispatchEvent(new Event("walletChange"));
-      
-      setTimeout(() => {
-        resetGame();
-      }, 3000);
-    } else if (result.finalPayout || result.isWin) {
-      setGameState("CASHED_OUT");
-      setBalance(result.newBalance);
-      setGridState(result.gridState || null);
-      window.dispatchEvent(new Event("walletChange"));
-      
-      setTimeout(() => {
-        resetGame();
-      }, 3000);
-    } else {
-      setClickedTiles(result.clickedTiles || []);
-      setCurrentMultiplier(result.currentMultiplier || 1.0);
-    }
-  };
 
   const handleStartGame = async () => {
     const betAmountNum = parseFloat(betAmount);
@@ -191,7 +140,6 @@ export default function MinesPage() {
       setClickedTiles([]);
       setCurrentMultiplier(response.currentMultiplier || 1.0);
       setBalance(response.newBalance);
-      window.dispatchEvent(new Event("walletChange"));
       setIsProcessing(false);
     } catch (err: any) {
       setError(err.message || "Failed to start game");
@@ -240,7 +188,6 @@ export default function MinesPage() {
       setGameState("CASHED_OUT");
       setBalance(response.newBalance);
       setGridState(response.gridState || null);
-      window.dispatchEvent(new Event("walletChange"));
       setIsProcessing(false);
 
       setTimeout(() => {
@@ -250,16 +197,6 @@ export default function MinesPage() {
       setError(err.message || "Failed to cash out");
       setIsProcessing(false);
     }
-  };
-
-  const resetGame = () => {
-    setGameState("IDLE");
-    setSessionId(null);
-    setClickedTiles([]);
-    setCurrentMultiplier(1.0);
-    setGridState(null);
-    setError("");
-    setIsProcessing(false);
   };
 
   const handleContinueSession = () => {
@@ -291,7 +228,6 @@ export default function MinesPage() {
       });
 
       setBalance(response.newBalance);
-      window.dispatchEvent(new Event("walletChange"));
       setShowActiveSessionModal(false);
       setActiveSessionData(null);
       setIsProcessing(false);
@@ -301,62 +237,8 @@ export default function MinesPage() {
     }
   };
 
-  const getTileContent = (index: number) => {
-    if (gameState === "IDLE") return "";
-    
-    if (gridState) {
-      if (gridState[index]) {
-        return "💣";
-      } else if (clickedTiles.includes(index)) {
-        return "💎";
-      }
-      return "";
-    }
-    
-    if (clickedTiles.includes(index)) {
-      return "💎";
-    }
-    
-    return "";
-  };
-
-  const getTileClassName = (index: number) => {
-    const baseClass = "aspect-square rounded-lg border-2 flex items-center justify-center text-4xl transition-all cursor-pointer";
-    
-    if (gameState === "IDLE") {
-      return `${baseClass} bg-slate-800 border-slate-700 cursor-not-allowed`;
-    }
-
-    if (gridState) {
-      if (gridState[index]) {
-        return `${baseClass} bg-red-900 border-red-700`;
-      } else if (clickedTiles.includes(index)) {
-        return `${baseClass} bg-emerald-900 border-emerald-700`;
-      }
-      return `${baseClass} bg-slate-800 border-slate-700`;
-    }
-
-    if (clickedTiles.includes(index)) {
-      return `${baseClass} bg-emerald-900 border-emerald-700 cursor-not-allowed`;
-    }
-
-    if (gameState === "PLAYING") {
-      return `${baseClass} bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-emerald-500`;
-    }
-
-    return `${baseClass} bg-slate-800 border-slate-700 cursor-not-allowed`;
-  };
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-16 h-16 text-emerald-500 animate-spin" />
-          <p className="text-white font-bold text-2xl">Loading Deep Sea Mines...</p>
-          <p className="text-slate-400 text-sm">Preparing the minefield</p>
-        </div>
-      </div>
-    );
+    return <GameLoading gameName="Deep Sea Mines" loadingMessage="Preparing the minefield" />;
   }
 
   return (
@@ -374,185 +256,61 @@ export default function MinesPage() {
           <div className="space-y-4">
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
               {gameState === "IDLE" && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-300">Bet Amount</label>
-                    <input
-                      type="number"
-                      value={betAmount}
-                      onChange={(e) => setBetAmount(e.target.value)}
-                      disabled={isProcessing}
-                      min="1"
-                      step="1"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      placeholder="Enter amount"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-300">Mines Count ({minesCount})</label>
-                    <input
-                      type="range"
-                      value={minesCount}
-                      onChange={(e) => setMinesCount(parseInt(e.target.value))}
-                      disabled={isProcessing}
-                      min="1"
-                      max="24"
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-slate-500">
-                      <span>1 Mine</span>
-                      <span>24 Mines</span>
-                    </div>
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-900/20 border border-red-700 rounded-lg p-3 text-red-400 text-sm">
-                      {error}
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={handleStartGame}
-                    disabled={isProcessing}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold uppercase py-3 text-lg rounded-lg transition-all"
-                  >
-                    {isProcessing ? "Starting..." : "Start Game"}
-                  </Button>
-                </>
+                <MinesGameControls
+                  betAmount={betAmount}
+                  minesCount={minesCount}
+                  onBetAmountChange={setBetAmount}
+                  onMinesCountChange={setMinesCount}
+                  onStartGame={handleStartGame}
+                  isProcessing={isProcessing}
+                  error={error}
+                />
               )}
 
               {gameState === "PLAYING" && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-300">Current Multiplier</label>
-                    <p className="text-3xl font-bold text-emerald-400">
-                      {currentMultiplier.toFixed(2)}x
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-300">Current Win</label>
-                    <p className="text-2xl font-bold text-yellow-400">
-                      ₱ {(parseFloat(betAmount) * currentMultiplier).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-slate-400">Gems Found</label>
-                    <p className="text-lg font-bold text-emerald-400">{clickedTiles.length} / {25 - minesCount}</p>
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-900/20 border border-red-700 rounded-lg p-3 text-red-400 text-sm">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="pt-4 border-t border-slate-700">
-                    <button
-                      onClick={handleCashOut}
-                      disabled={isProcessing || clickedTiles.length === 0}
-                      className="w-full py-3 px-4 rounded-lg font-semibold text-lg uppercase tracking-tight transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-yellow-600 text-white border border-yellow-500 hover:bg-yellow-700"
-                    >
-                      Cash Out
-                    </button>
-                  </div>
-                </>
+                <MinesGameStats
+                  currentMultiplier={currentMultiplier}
+                  betAmount={betAmount}
+                  clickedTiles={clickedTiles}
+                  minesCount={minesCount}
+                  error={error}
+                  onCashOut={handleCashOut}
+                  isProcessing={isProcessing}
+                />
               )}
 
               {(gameState === "BUSTED" || gameState === "CASHED_OUT") && (
-                <div className={`${gameState === "BUSTED" ? "bg-red-900/20 border-red-700" : "bg-emerald-900/20 border-emerald-700"} border rounded-lg p-4 space-y-2`}>
-                  <p className="text-sm text-slate-300">
-                    {gameState === "BUSTED" ? "Game Over - Hit a Mine!" : "Success - Cashed Out!"}
-                  </p>
-                  <p className={`text-2xl font-bold ${gameState === "BUSTED" ? "text-red-400" : "text-emerald-400"}`}>
-                    {gameState === "BUSTED" ? "Better luck next time" : `₱ ${(parseFloat(betAmount) * currentMultiplier).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                  </p>
-                </div>
+                <MinesResultDisplay
+                  gameState={gameState}
+                  betAmount={betAmount}
+                  currentMultiplier={currentMultiplier}
+                />
               )}
 
-              <p className="text-3xl font-bold text-white text-center">
-                <span className="text-yellow-400">₱</span> {balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
+              <BalanceDisplay balance={balance} />
             </div>
           </div>
 
           <div className="lg:col-span-2">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-950 border-2 border-slate-700 rounded-3xl p-8">
-              <div className="grid grid-cols-5 gap-3">
-                {Array.from({ length: 25 }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleTileClick(index)}
-                    disabled={isProcessing || clickedTiles.includes(index) || gameState !== "PLAYING" || gridState !== null}
-                    className={getTileClassName(index)}
-                  >
-                    {getTileContent(index)}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <MinesGrid
+              gameState={gameState}
+              gridState={gridState}
+              clickedTiles={clickedTiles}
+              isProcessing={isProcessing}
+              onTileClick={handleTileClick}
+            />
           </div>
         </div>
       </main>
 
-      {showActiveSessionModal && activeSessionData && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h2 className="text-2xl font-bold text-white mb-4">Active Session Found</h2>
-            <p className="text-slate-300 mb-6">
-              You have an active Mines game session. Would you like to continue playing or cash out?
-            </p>
-            
-            <div className="space-y-3 mb-6 bg-slate-800/50 rounded-lg p-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Bet Amount:</span>
-                <span className="text-white font-semibold">${activeSessionData.betAmount?.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Mines:</span>
-                <span className="text-white font-semibold">{activeSessionData.minesCount}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Gems Found:</span>
-                <span className="text-white font-semibold">{activeSessionData.clickedTiles?.length || 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Current Multiplier:</span>
-                <span className="text-emerald-400 font-bold text-lg">{activeSessionData.currentMultiplier?.toFixed(2)}x</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Potential Payout:</span>
-                <span className="text-emerald-400 font-bold text-lg">
-                  ${((activeSessionData.betAmount || 0) * (activeSessionData.currentMultiplier || 1)).toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleCashOutSession}
-                disabled={isProcessing}
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? 'Processing...' : 'CASH OUT'}
-              </button>
-              <button
-                onClick={handleContinueSession}
-                disabled={isProcessing}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                CONTINUE
-              </button>
-            </div>
-
-            {error && (
-              <p className="mt-4 text-red-400 text-sm text-center">{error}</p>
-            )}
-          </div>
-        </div>
-      )}
+      <MinesSessionModal
+        isOpen={showActiveSessionModal}
+        sessionData={activeSessionData}
+        isProcessing={isProcessing}
+        error={error}
+        onContinue={handleContinueSession}
+        onCashOut={handleCashOutSession}
+      />
     </div>
   );
 }
