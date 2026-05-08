@@ -1,12 +1,15 @@
 package edu.cit.sanchez.bidwarsonline.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class PlaceBetResponse {
     private String transactionId;
     private BigDecimal resultMultiplier;
     private BigDecimal payout;
     private BigDecimal newBalance;
+    private Integer bucketPosition;
+    private List<String> ballPath;
 
     public PlaceBetResponse() {
     }
@@ -16,6 +19,15 @@ public class PlaceBetResponse {
         this.resultMultiplier = resultMultiplier;
         this.payout = payout;
         this.newBalance = newBalance;
+    }
+
+    public PlaceBetResponse(String transactionId, BigDecimal resultMultiplier, BigDecimal payout, BigDecimal newBalance, Integer bucketPosition, List<String> ballPath) {
+        this.transactionId = transactionId;
+        this.resultMultiplier = resultMultiplier;
+        this.payout = payout;
+        this.newBalance = newBalance;
+        this.bucketPosition = bucketPosition;
+        this.ballPath = ballPath;
     }
 
     public String getTransactionId() {
@@ -48,5 +60,21 @@ public class PlaceBetResponse {
 
     public void setNewBalance(BigDecimal newBalance) {
         this.newBalance = newBalance;
+    }
+
+    public Integer getBucketPosition() {
+        return bucketPosition;
+    }
+
+    public void setBucketPosition(Integer bucketPosition) {
+        this.bucketPosition = bucketPosition;
+    }
+
+    public List<String> getBallPath() {
+        return ballPath;
+    }
+
+    public void setBallPath(List<String> ballPath) {
+        this.ballPath = ballPath;
     }
 }

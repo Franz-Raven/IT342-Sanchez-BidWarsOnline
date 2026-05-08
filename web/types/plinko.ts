@@ -12,4 +12,6 @@ export interface PlinkoResult {
   resultMultiplier: number;
   payout: number;
   newBalance: number;
+  bucketPosition?: number;
+  ballPath?: string[];
 }
