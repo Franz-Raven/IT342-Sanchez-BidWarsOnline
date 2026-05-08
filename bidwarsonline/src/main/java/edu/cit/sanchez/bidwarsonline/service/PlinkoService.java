@@ -55,7 +55,9 @@ public class PlinkoService {
         wallet.setBalance(newBalance);
         walletRepository.save(wallet);
 
-        BigDecimal resultMultiplier = calculatePlinkoMultiplier(betAmount, risk);
+        final int FIXED_ROWS = 14;
+        BallDropResult ballDropResult = simulateBallDropWithPath(FIXED_ROWS);
+        BigDecimal resultMultiplier = getMultiplierForBucket(ballDropResult.getFinalBucket(), risk);
         BigDecimal payout = gameEngineService.calculatePayout(betAmount, resultMultiplier);
 
         newBalance = wallet.getBalance().add(payout);
@@ -71,27 +73,21 @@ public class PlinkoService {
 
         broadcastBalanceUpdate(user.getId(), newBalance);
 
-        return new PlaceBetResponse(transactionId, resultMultiplier, payout, newBalance);
+        return new PlaceBetResponse(transactionId, resultMultiplier, payout, newBalance, 
+                                    ballDropResult.getFinalBucket(), ballDropResult.getPath());
     }
 
-    private BigDecimal calculatePlinkoMultiplier(BigDecimal betAmount, String risk) {
-        if (betAmount == null || betAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Bet amount must be greater than 0");
-        }
-
-        final int FIXED_ROWS = 14;
-        int finalBucket = simulateBallDrop(FIXED_ROWS);
-        BigDecimal multiplier = getMultiplierForBucket(finalBucket, risk);
-
-        return multiplier;
-    }
-
-    private int simulateBallDrop(Integer rows) {
+    private BallDropResult simulateBallDropWithPath(Integer rows) {
         int position = 0;
+        java.util.List<String> path = new java.util.ArrayList<>();
+        
         for (int i = 0; i < rows; i++) {
-            position += secureRandom.nextInt(2);
+            int direction = secureRandom.nextInt(2);
+            position += direction;
+            path.add(direction == 0 ? "L" : "R");
         }
-        return position;
+        
+        return new BallDropResult(position, path);
     }
 
     private BigDecimal getMultiplierForBucket(int bucketPosition, String risk) {
@@ -151,6 +147,24 @@ public class PlinkoService {
 
         public LocalDateTime getTimestamp() {
             return timestamp;
+        }
+    }
+
+    private static class BallDropResult {
+        private final int finalBucket;
+        private final java.util.List<String> path;
+
+        public BallDropResult(int finalBucket, java.util.List<String> path) {
+            this.finalBucket = finalBucket;
+            this.path = path;
+        }
+
+        public int getFinalBucket() {
+            return finalBucket;
+        }
+
+        public java.util.List<String> getPath() {
+            return path;
         }
     }
 }
