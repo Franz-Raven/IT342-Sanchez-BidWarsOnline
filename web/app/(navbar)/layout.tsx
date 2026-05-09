@@ -1,4 +1,4 @@
-import Navigation from "@/components/navigation"
+import Navigation from "@/shared/components/navigation"
 
 export default function NavbarLayout({
   children,
@@ -12,3 +12,4 @@ export default function NavbarLayout({
     </>
   )
 }
+

@@ -2,19 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { placeHiloBet, checkActiveSession } from "@/lib/api/hilo";
-import { HiloResult } from "@/types/hilo";
-import { useWallet } from "@/hooks/useWallet";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { HiloSessionModal } from "@/components/hilo/hilo-session-modal";
-import { HiloGameControls } from "@/components/hilo/hilo-game-controls";
-import { HiloGameStats } from "@/components/hilo/hilo-game-stats";
-import { HiloPlayingCard } from "@/components/hilo/hilo-playing-card";
-import { HiloMultiplierDisplay } from "@/components/hilo/hilo-multiplier-display";
-import { HiloGameButtons } from "@/components/hilo/hilo-game-buttons";
-import { HiloResultDisplay } from "@/components/hilo/hilo-result-display";
-import { GameLoading } from "@/components/shared/game-loading";
-import { BalanceDisplay } from "@/components/shared/balance-display";
+import { placeHiloBet, checkActiveSession } from "@/features/hilo/api/hilo";
+import { HiloResult } from "@/features/hilo/types/hilo";
+import { useWallet } from "@/features/wallet/hooks/useWallet";
+import { useWebSocket } from "@/features/wallet/hooks/useWebSocket";
+import { HiloSessionModal } from "@/features/hilo/components/hilo-session-modal";
+import { HiloGameControls } from "@/features/hilo/components/hilo-game-controls";
+import { HiloGameStats } from "@/features/hilo/components/hilo-game-stats";
+import { HiloPlayingCard } from "@/features/hilo/components/hilo-playing-card";
+import { HiloMultiplierDisplay } from "@/features/hilo/components/hilo-multiplier-display";
+import { HiloGameButtons } from "@/features/hilo/components/hilo-game-buttons";
+import { HiloResultDisplay } from "@/features/hilo/components/hilo-result-display";
+import { GameLoading } from "@/shared/components/game-loading";
+import { BalanceDisplay } from "@/shared/components/balance-display";
 
 type GameState = "IDLE" | "PLAYING" | "BUSTED" | "CASHED_OUT";
 
@@ -384,3 +384,4 @@ export default function HiLoPage() {
     </div>
   );
 }
+

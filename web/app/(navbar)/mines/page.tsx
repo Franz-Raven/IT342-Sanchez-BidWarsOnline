@@ -2,17 +2,17 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { placeMinesBet, checkActiveSession } from "@/lib/api/mines";
-import { MinesResult } from "@/types/mines";
-import { useWallet } from "@/hooks/useWallet";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { GameLoading } from "@/components/shared/game-loading";
-import { BalanceDisplay } from "@/components/shared/balance-display";
-import { MinesSessionModal } from "@/components/mines/mines-session-modal";
-import { MinesGameControls } from "@/components/mines/mines-game-controls";
-import { MinesGameStats } from "@/components/mines/mines-game-stats";
-import { MinesResultDisplay } from "@/components/mines/mines-result-display";
-import { MinesGrid } from "@/components/mines/mines-grid";
+import { placeMinesBet, checkActiveSession } from "@/features/mines/api/mines";
+import { MinesResult } from "@/features/mines/types/mines";
+import { useWallet } from "@/features/wallet/hooks/useWallet";
+import { useWebSocket } from "@/features/wallet/hooks/useWebSocket";
+import { GameLoading } from "@/shared/components/game-loading";
+import { BalanceDisplay } from "@/shared/components/balance-display";
+import { MinesSessionModal } from "@/features/mines/components/mines-session-modal";
+import { MinesGameControls } from "@/features/mines/components/mines-game-controls";
+import { MinesGameStats } from "@/features/mines/components/mines-game-stats";
+import { MinesResultDisplay } from "@/features/mines/components/mines-result-display";
+import { MinesGrid } from "@/features/mines/components/mines-grid";
 
 type GameState = "IDLE" | "PLAYING" | "BUSTED" | "CASHED_OUT";
 
@@ -314,3 +314,4 @@ export default function MinesPage() {
     </div>
   );
 }
+

@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { placePlinkoBet } from "@/lib/api/plinko";
-import { getWallet } from "@/lib/api/wallet";
-import { PlinkoResult } from "@/types/plinko";
+import { Button } from "@/shared/ui/button";
+import { placePlinkoBet } from "@/features/plinko/api/plinko";
+import { getWallet } from "@/features/wallet/api/wallet";
+import { PlinkoResult } from "@/features/plinko/types/plinko";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
@@ -220,3 +220,4 @@ export default function PlinkoPage() {
     </div>
   );
 }
+
